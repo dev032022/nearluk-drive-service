@@ -4,7 +4,6 @@ import com.google.api.client.http.InputStreamContent;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
-import com.nearluk.poc.drive.GoogleDriveManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,11 +19,11 @@ import java.util.List;
 @Service
 public class FileManager {
 
-    private GoogleDriveManager googleDriveManager;
+    private Drive googleDrive;
 
     public List<File> listEverything() throws Exception {
         // Print the names and IDs for up to 10 files.
-        FileList result = googleDriveManager.getInstance().files().list()
+        FileList result = googleDrive.files().list()
                 .setPageSize(10)
                 .setFields("nextPageToken, files(id, name)")
                 .execute();
@@ -37,7 +36,7 @@ public class FileManager {
             parentId = "root";
         }
         String query = "'" + parentId + "' in parents";
-        FileList result = googleDriveManager.getInstance().files().list()
+        FileList result = googleDrive.files().list()
                 .setQ(query)
                 .setPageSize(10)
                 .setFields("nextPageToken, files(id, name)")
@@ -48,12 +47,12 @@ public class FileManager {
     public void downloadFile(String id, OutputStream outputStream) throws Exception {
         if (id != null) {
             String fileId = id;
-            googleDriveManager.getInstance().files().get(fileId).executeMediaAndDownloadTo(outputStream);
+            googleDrive.files().get(fileId).executeMediaAndDownloadTo(outputStream);
         }
     }
 
     public void deleteFile(String fileId) throws Exception {
-        googleDriveManager.getInstance().files().delete(fileId).execute();
+        googleDrive.files().delete(fileId).execute();
     }
 
     public String uploadFile(MultipartFile file, String filePath) {
@@ -63,7 +62,7 @@ public class FileManager {
                 File fileMetadata = new File();
                 fileMetadata.setParents(Collections.singletonList(folderId));
                 fileMetadata.setName(file.getOriginalFilename());
-                File uploadFile = googleDriveManager.getInstance()
+                File uploadFile = googleDrive
                         .files()
                         .create(fileMetadata, new InputStreamContent(
                                 file.getContentType(),
@@ -82,7 +81,7 @@ public class FileManager {
         String parentId = null;
         String[] folderNames = path.split("/");
 
-        Drive driveInstance = googleDriveManager.getInstance();
+        Drive driveInstance = googleDrive;
         for (String name : folderNames) {
             parentId = findOrCreateFolder(parentId, name, driveInstance);
         }
